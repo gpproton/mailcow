@@ -95,6 +95,7 @@ $AVAILABLE_LANGUAGES = array(
   'it-it' => 'Italiano (Italian)',
   'ko-kr' => '한국어 (Korean)',
   'lv-lv' => 'latviešu (Latvian)',
+  'lt-lt' => 'Lietuvių (Lithuanian)',
   'nb-no' => 'Norsk (Norwegian)',
   'nl-nl' => 'Nederlands (Dutch)',
   'pl-pl' => 'Język Polski (Polish)',
@@ -208,6 +209,12 @@ $MAILBOX_DEFAULT_ATTRIBUTES['mailbox_format'] = 'maildir:';
 
 // Show last IMAP and POP3 logins
 $SHOW_LAST_LOGIN = true;
+
+// Maximum number of password reset tokens that can be generated at once per user
+$PW_RESET_TOKEN_LIMIT = 3;
+
+// Maximum time in minutes a password reset token is valid
+$PW_RESET_TOKEN_LIFETIME = 15;
 
 // UV flag handling in FIDO2/WebAuthn - defaults to false to allow iOS logins
 // true = required

@@ -1,12 +1,13 @@
-FROM debian:bullseye-slim
-LABEL maintainer "The Infrastructure Company GmbH GmbH <info@servercow.de>"
+FROM debian:bookworm-slim
+
+LABEL maintainer="The Infrastructure Company GmbH <info@servercow.de>"
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG DEBIAN_VERSION=bullseye
+ARG DEBIAN_VERSION=bookworm
 ARG SOGO_DEBIAN_REPOSITORY=http://www.axis.cz/linux/debian
 # renovate: datasource=github-releases depName=tianon/gosu versioning=semver-coerced extractVersion=^(?<version>.*)$
 ARG GOSU_VERSION=1.17
-ENV LC_ALL C
+ENV LC_ALL=C
 
 # Prerequisites
 RUN echo "Building from repository $SOGO_DEBIAN_REPOSITORY" \
@@ -54,4 +55,4 @@ RUN chmod +x /bootstrap-sogo.sh \
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
-CMD exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

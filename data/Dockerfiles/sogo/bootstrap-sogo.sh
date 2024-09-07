@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Wait for MySQL to warm-up
-while ! mysqladmin status --socket=/var/run/mysqld/mysqld.sock -u${DBUSER} -p${DBPASS} --silent; do
+while ! mariadb-admin status --ssl=false --socket=/var/run/mysqld/mysqld.sock -u${DBUSER} -p${DBPASS} --silent; do
   echo "Waiting for database to come up..."
   sleep 2
 done
@@ -150,6 +150,8 @@ cat <<EOF > /var/lib/sogo/GNUstep/Defaults/sogod.plist
     <string>YES</string>
     <key>SOGoEncryptionKey</key>
     <string>${RAND_PASS}</string>
+    <key>OCSAdminURL</key>
+    <string>mysql://${DBUSER}:${DBPASS}@%2Fvar%2Frun%2Fmysqld%2Fmysqld.sock/${DBNAME}/sogo_admin</string>
     <key>OCSCacheFolderURL</key>
     <string>mysql://${DBUSER}:${DBPASS}@%2Fvar%2Frun%2Fmysqld%2Fmysqld.sock/${DBNAME}/sogo_cache_folder</string>
     <key>OCSEMailAlarmsFolderURL</key>

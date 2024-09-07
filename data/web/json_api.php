@@ -47,6 +47,12 @@ function api_log($_data) {
   }
 }
 
+// Block requests not intended for direct API use by checking the 'Sec-Fetch-Dest' header.
+if (isset($_SERVER['HTTP_SEC_FETCH_DEST']) && $_SERVER['HTTP_SEC_FETCH_DEST'] !== 'empty') {
+  header('HTTP/1.1 403 Forbidden');
+  exit;
+}
+
 if (isset($_GET['query'])) {
 
   $query = explode('/', $_GET['query']);
@@ -1967,7 +1973,6 @@ if (isset($_GET['query'])) {
         case "quota_notification_bcc":
           process_edit_return(quota_notification_bcc('edit', $attr));
         break;
-        break;
         case "mailq":
           process_edit_return(mailq('edit', array_merge(array('qid' => $items), $attr)));
         break;
@@ -2062,6 +2067,9 @@ if (isset($_GET['query'])) {
         break;
         case "cors":
           process_edit_return(cors('edit', $attr));
+        break;
+        case "reset-password-notification":
+          process_edit_return(reset_password('edit_notification', $attr));
         break;
         // return no route found if no case is matched
         default:

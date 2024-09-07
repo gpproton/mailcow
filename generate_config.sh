@@ -9,7 +9,7 @@ if [[ "$(uname -r)" =~ ^4\.15\.0-60 ]]; then
 fi
 
 if [[ "$(uname -r)" =~ ^4\.4\. ]]; then
-  if grep -q Ubuntu <<< $(uname -a); then
+  if grep -q Ubuntu <<< "$(uname -a)"; then
     echo "DO NOT RUN mailcow ON THIS UBUNTU KERNEL!";
     echo "Please update to linux-generic-hwe-16.04 by running \"apt-get install --install-recommends linux-generic-hwe-16.04\""
     exit 1
@@ -25,13 +25,23 @@ for bin in openssl curl docker git awk sha1sum grep cut; do
   if [[ -z $(which ${bin}) ]]; then echo "Cannot find ${bin}, exiting..."; exit 1; fi
 done
 
+# Check Docker Version (need at least 24.X)
+docker_version=$(docker -v | grep -oP '\d+\.\d+\.\d+' | cut -d '.' -f 1)
+
+if [[ $docker_version -lt 24 ]]; then
+  echo -e "\e[31mCannot find Docker with a Version higher or equals 24.0.0\e[0m"
+  echo -e "\e[33mmailcow needs a newer Docker version to work properly...\e[0m"
+  echo -e "\e[31mPlease update your Docker installation... exiting\e[0m"
+  exit 1
+fi
+
 if docker compose > /dev/null 2>&1; then
     if docker compose version --short | grep -e "^2." -e "^v2." > /dev/null 2>&1; then
       COMPOSE_VERSION=native
       echo -e "\e[33mFound Docker Compose Plugin (native).\e[0m"
       echo -e "\e[33mSetting the DOCKER_COMPOSE_VERSION Variable to native\e[0m"
       sleep 2
-      echo -e "\e[33mNotice: You´ll have to update this Compose Version via your Package Manager manually!\e[0m"
+      echo -e "\e[33mNotice: You'll have to update this Compose Version via your Package Manager manually!\e[0m"
     else
       echo -e "\e[31mCannot find Docker Compose with a Version Higher than 2.X.X.\e[0m" 
       echo -e "\e[31mPlease update/install it manually regarding to this doc site: https://docs.mailcow.email/install/\e[0m"
@@ -147,40 +157,44 @@ done
 
 MEM_TOTAL=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
 
-if [ ${MEM_TOTAL} -le "2621440" ]; then
-  echo "Installed memory is <= 2.5 GiB. It is recommended to disable ClamAV to prevent out-of-memory situations."
-  echo "ClamAV can be re-enabled by setting SKIP_CLAMD=n in mailcow.conf."
-  read -r -p  "Do you want to disable ClamAV now? [Y/n] " response
-  case $response in
-    [nN][oO]|[nN])
-      SKIP_CLAMD=n
+if [ -z "${SKIP_CLAMD}" ]; then
+  if [ "${MEM_TOTAL}" -le "2621440" ]; then
+    echo "Installed memory is <= 2.5 GiB. It is recommended to disable ClamAV to prevent out-of-memory situations."
+    echo "ClamAV can be re-enabled by setting SKIP_CLAMD=n in mailcow.conf."
+    read -r -p  "Do you want to disable ClamAV now? [Y/n] " response
+    case $response in
+      [nN][oO]|[nN])
+        SKIP_CLAMD=n
+        ;;
+      *)
+        SKIP_CLAMD=y
       ;;
-    *)
-      SKIP_CLAMD=y
-    ;;
-  esac
-else
-  SKIP_CLAMD=n
+    esac
+  else
+    SKIP_CLAMD=n
+  fi
 fi
 
-if [ ${MEM_TOTAL} -le "2097152" ]; then
-  echo "Disabling Solr on low-memory system."
-  SKIP_SOLR=y
-elif [ ${MEM_TOTAL} -le "3670016" ]; then
-  echo "Installed memory is <= 3.5 GiB. It is recommended to disable Solr to prevent out-of-memory situations."
-  echo "Solr is a prone to run OOM and should be monitored. The default Solr heap size is 1024 MiB and should be set in mailcow.conf according to your expected load."
-  echo "Solr can be re-enabled by setting SKIP_SOLR=n in mailcow.conf but will refuse to start with less than 2 GB total memory."
-  read -r -p  "Do you want to disable Solr now? [Y/n] " response
-  case $response in
-    [nN][oO]|[nN])
-      SKIP_SOLR=n
+if [ -z "${SKIP_SOLR}" ]; then
+  if [ "${MEM_TOTAL}" -le "2097152" ]; then
+    echo "Disabling Solr on low-memory system."
+    SKIP_SOLR=y
+  elif [ "${MEM_TOTAL}" -le "3670016" ]; then
+    echo "Installed memory is <= 3.5 GiB. It is recommended to disable Solr to prevent out-of-memory situations."
+    echo "Solr is a prone to run OOM and should be monitored. The default Solr heap size is 1024 MiB and should be set in mailcow.conf according to your expected load."
+    echo "Solr can be re-enabled by setting SKIP_SOLR=n in mailcow.conf but will refuse to start with less than 2 GB total memory."
+    read -r -p  "Do you want to disable Solr now? [Y/n] " response
+    case $response in
+      [nN][oO]|[nN])
+        SKIP_SOLR=n
+        ;;
+      *)
+        SKIP_SOLR=y
       ;;
-    *)
-      SKIP_SOLR=y
-    ;;
-  esac
-else
-  SKIP_SOLR=n
+    esac
+  else
+    SKIP_SOLR=n
+  fi
 fi
 
 if [[ ${SKIP_BRANCH} != y ]]; then
@@ -192,7 +206,7 @@ if [[ ${SKIP_BRANCH} != y ]]; then
   sleep 1
 
   while [ -z "${MAILCOW_BRANCH}" ]; do
-    read -r -p  "Choose the Branch with it´s number [1/2] " branch
+    read -r -p  "Choose the Branch with it's number [1/2] " branch
     case $branch in
       [2])
         MAILCOW_BRANCH="nightly"
@@ -204,7 +218,7 @@ if [[ ${SKIP_BRANCH} != y ]]; then
   done
 
   git fetch --all
-  git checkout -f $MAILCOW_BRANCH
+  git checkout -f "$MAILCOW_BRANCH"
 
 elif [[ ${SKIP_BRANCH} == y ]]; then
   echo -e "\033[33mEnabled Dev Mode.\033[0m"
@@ -335,6 +349,13 @@ MAILDIR_GC_TIME=7200
 #
 
 ADDITIONAL_SAN=
+
+# Obtain certificates for autodiscover.* and autoconfig.* domains.
+# This can be useful to switch off in case you are in a scenario where a reverse proxy already handles those.
+# There are mixed scenarios where ports 80,443 are occupied and you do not want to share certs
+# between services. So acme-mailcow obtains for maildomains and all web-things get handled
+# in the reverse proxy.
+AUTODISCOVER_SAN=y
 
 # Additional server names for mailcow UI
 #
