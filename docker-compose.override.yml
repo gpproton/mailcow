@@ -1,0 +1,27 @@
+networks:
+  main:
+    name: dokploy-network
+    external: true
+
+services:
+    nginx-mailcow:
+      networks:
+        main:
+    certdumper:
+      image: ghcr.io/kereis/traefik-certs-dumper:latest
+      container_name: traefik_certdumper
+      restart: unless-stopped
+      network_mode: none
+      command: --restart-containers ${COMPOSE_PROJECT_NAME}-postfix-mailcow-1,${COMPOSE_PROJECT_NAME}-nginx-mailcow-1,${COMPOSE_PROJECT_NAME}-dovecot-mailcow-1
+      volumes:
+        - "/etc/dokploy/traefik/dynamic:/traefik:ro"
+        - "/var/run/docker.sock:/var/run/docker.sock:ro"
+        - "./data/assets/ssl:/output:rw"
+      environment:
+        - DOMAIN=${MAILCOW_HOSTNAME}
+        - ACME_FILE_PATH=/traefik/acme.json
+      healthcheck:
+        test: ["CMD", "/usr/bin/healthcheck"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
