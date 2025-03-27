@@ -581,7 +581,7 @@
         "alias": "Editar alias",
         "allow_from_smtp": "<b>Permita que esses IPs usem apenas SMTP</b>",
         "allow_from_smtp_info": "Deixe em branco para permitir todos os remetentes. Endereços e <br>redes IPv4/IPv6.",
-        "allowed_protocols": "Protocolos permitidos",
+        "allowed_protocols": "Protocolos permitidos para acesso direto do usuário (não afeta os protocolos de senha do aplicativo)",
         "app_name": "Nome do aplicativo",
         "app_passwd": "Senha do aplicativo",
         "app_passwd_protocols": "Protocolos permitidos para a senha do aplicativo",
@@ -762,7 +762,7 @@
         "mobileconfig_info": "Faça login como usuário da mailbox para baixar o perfil de conexão Apple solicitado.",
         "new_password": "Nova senha",
         "new_password_confirm": "Confirmar nova senha",
-        "other_logins": "Login com chave",
+        "other_logins": "ou faça login com",
         "password": "Senha",
         "reset_password": "Recuperar a senha",
         "request_reset_password": "Solicitar troca de senha",
@@ -793,7 +793,7 @@
         "all_domains": "Todos os domínios",
         "allow_from_smtp": "<b>Permita que esses IPs usem apenas SMTP</b>",
         "allow_from_smtp_info": "Deixe em branco para permitir todos os remetentes. Endereços e <br>redes IPv4/IPv6.",
-        "allowed_protocols": "Protocolos permitidos para acesso direto do usuário (não afeta os protocolos de senha do aplicativo)",
+        "allowed_protocols": "Protocolos permitidos",
         "backup_mx": "Domínio de retransmissão",
         "bcc": "BCC",
         "bcc_destination": "Destino BCC",
@@ -882,7 +882,7 @@
         "recipient_map": "Mapa do destinatário",
         "recipient_map_info": "Os mapas de destinatários são usados para substituir o endereço de destino em uma mensagem antes que ela seja entregue.",
         "recipient_map_new": "Novo destinatário",
-        "recipient_map_new_info": "O destino do mapa do destinatário deve ser um endereço de e-mail válido.",
+        "recipient_map_new_info": "O destino do mapa do destinatário deve ser um endereço de e-mail válido ou um nome de domínio.",
         "recipient_map_old": "Destinatário original",
         "recipient_map_old_info": "O destino original do mapa de um destinatário deve ser um endereço de e-mail válido ou um nome de domínio.",
         "recipient_maps": "Mapas de destinatários",
@@ -1030,9 +1030,7 @@
     },
     "start": {
         "help": "Mostrar/ocultar painel de ajuda",
-        "imap_smtp_server_auth_info": "Use seu endereço de e-mail completo e o mecanismo de autenticação PLAIN. <br>\r\nSeus dados de login serão criptografados pela criptografia obrigatória do lado do servidor.",
-        "mailcow_apps_detail": "Use um aplicativo mailcow para acessar seus e-mails, calendário, contatos e muito mais.",
-        "mailcow_panel_detail": "<b>Os administradores de domínio</b> criam, modificam ou excluem mailboxes e aliases, alteram domínios e leem mais informações sobre seus domínios atribuídos. <br>\n<b>Os usuários de mailbox </b> podem criar aliases com limite de tempo (aliases de spam), alterar suas configurações de senha e filtro de spam."
+        "imap_smtp_server_auth_info": "Use seu endereço de e-mail completo e o mecanismo de autenticação PLAIN. <br>\r\nSeus dados de login serão criptografados pela criptografia obrigatória do lado do servidor."
     },
     "success": {
         "acl_saved": "ACL para o objeto %s salvo",
