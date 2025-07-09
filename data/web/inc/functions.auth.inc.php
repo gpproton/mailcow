@@ -9,25 +9,52 @@ function check_login($user, $pass, $app_passwd_data = false, $extra = null) {
   // Try validate admin
   if (!isset($role) || $role == "admin") {
     $result = admin_login($user, $pass);
-    if ($result !== false) return $result;
+    if ($result !== false){
+      return $result;
+    }
   }
 
   // Try validate domain admin
   if (!isset($role) || $role == "domain_admin") {
     $result = domainadmin_login($user, $pass);
-    if ($result !== false) return $result;
+    if ($result !== false) {
+      return $result;
+    }
+  }
+
+
+  // Try validate app password
+  if (!isset($role) || $role == "app") {
+    $result = apppass_login($user, $pass, $app_passwd_data);
+    if ($result !== false) {
+      if ($app_passwd_data['eas'] === true) {
+        $service = 'EAS';
+      } elseif ($app_passwd_data['dav'] === true) {
+        $service = 'DAV';
+      } else {
+        $service = 'NONE';
+      }
+      $real_rip = ($_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR']);
+      set_sasl_log($user, $real_rip, $service, $pass);
+      return $result;
+    }
   }
 
   // Try validate user
   if (!isset($role) || $role == "user") {
     $result = user_login($user, $pass);
-    if ($result !== false) return $result;
-  }
-
-  // Try validate app password
-  if (!isset($role) || $role == "app") {
-    $result = apppass_login($user, $pass, $app_passwd_data);
-    if ($result !== false) return $result;
+    if ($result !== false) {
+      if ($app_passwd_data['eas'] === true) {
+        $service = 'EAS';
+      } elseif ($app_passwd_data['dav'] === true) {
+        $service = 'DAV';
+      } else {
+        $service = 'MAILCOWUI';
+      }
+      $real_rip = ($_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR']);
+      set_sasl_log($user, $real_rip, $service);
+      return $result;
+    }
   }
 
   // skip log and only return false if it's an internal request
@@ -215,6 +242,7 @@ function user_login($user, $pass, $extra = null){
     return false;
   }
 
+  $row['attributes'] = json_decode($row['attributes'], true);
   switch ($row['authsource']) {
     case 'keycloak':
       // user authsource is keycloak, try using via rest flow
@@ -324,6 +352,11 @@ function user_login($user, $pass, $extra = null){
       }
       // verify password
       if (verify_hash($row['password'], $pass) !== false) {
+
+        if (intval($row['attributes']['force_pw_update']) == 1) {
+          $_SESSION['pending_pw_update'] = true;
+        }
+
         // check for tfa authenticators
         $authenticators = get_tfa($user);
         if (isset($authenticators['additional']) && is_array($authenticators['additional']) && count($authenticators['additional']) > 0 && !$is_internal) {
@@ -415,21 +448,7 @@ function apppass_login($user, $pass, $app_passwd_data, $extra = null){
 
     // verify password
     if (verify_hash($row['password'], $pass) !== false) {
-      if ($is_internal){
-        $remote_addr = $extra['remote_addr'];
-      } else {
-        $remote_addr = ($_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR']);
-      }
-
-      $service = strtoupper($is_app_passwd);
-      $stmt = $pdo->prepare("REPLACE INTO sasl_log (`service`, `app_password`, `username`, `real_rip`) VALUES (:service, :app_id, :username, :remote_addr)");
-      $stmt->execute(array(
-        ':service' => $service,
-        ':app_id' => $row['app_passwd_id'],
-        ':username' => $user,
-        ':remote_addr' => $remote_addr
-      ));
-
+      $_SESSION['app_passwd_id'] = $row['app_passwd_id'];
       unset($_SESSION['ldelay']);
       return "user";
     }
@@ -456,6 +475,9 @@ function keycloak_mbox_login_rest($user, $pass, $extra = null){
         'msg' => 'malformed_username'
       );
     }
+    return false;
+  }
+  if (!$iam_provider) {
     return false;
   }
 
@@ -527,6 +549,17 @@ function keycloak_mbox_login_rest($user, $pass, $extra = null){
     return 'user';
   }
 
+  // check if login provisioning is enabled before creating user
+  if (!$iam_settings['login_provisioning']){
+    if (!$is_internal){
+      $_SESSION['return'][] =  array(
+        'type' => 'danger',
+        'log' => array(__FUNCTION__, "Auto-create users on login is deactivated"),
+        'msg' => 'login_failed'
+      );
+    }
+    return false;
+  }
   // check if matching attribute exist
   if (empty($iam_settings['mappers']) || !$user_template || $mapper_key === false) {
     if (!empty($iam_settings['default_template'])) {
@@ -640,10 +673,21 @@ function ldap_mbox_login($user, $pass, $extra = null){
     return 'user';
   }
 
+  // check if login provisioning is enabled before creating user
+  if (!$iam_settings['login_provisioning']){
+    if (!$is_internal){
+      $_SESSION['return'][] =  array(
+        'type' => 'danger',
+        'log' => array(__FUNCTION__, "Auto-create users on login is deactivated"),
+        'msg' => 'login_failed'
+      );
+    }
+    return false;
+  }
   // check if matching attribute exist
   if (empty($iam_settings['mappers']) || !$user_template || $mapper_key === false) {
-    if (!empty($iam_settings['default_tempalte'])) {
-      $mbox_template = $iam_settings['default_tempalte'];
+    if (!empty($iam_settings['default_template'])) {
+      $mbox_template = $iam_settings['default_template'];
     } else {
       $_SESSION['return'][] =  array(
         'type' => 'danger',

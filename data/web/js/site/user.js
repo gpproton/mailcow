@@ -90,13 +90,7 @@ jQuery(function($){
           console.log('error reading last logins');
         },
         success: function (data) {
-          $('.last-ui-login').html('');
           $('.last-sasl-login').html('');
-          if (data.ui.time) {
-            $('.last-ui-login').html('<i class="bi bi-person-fill"></i> ' + lang.last_ui_login + ': ' + unix_time_format(data.ui.time));
-          } else {
-            $('.last-ui-login').text(lang.no_last_login);
-          }
           if (data.sasl) {
             $('.last-sasl-login').append('<ul class="list-group">');
             $.each(data.sasl, function (i, item) {
@@ -104,7 +98,7 @@ jQuery(function($){
               var local_datetime = datetime.toLocaleDateString(undefined, {year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit"});
               var service = '<div class="badge bg-secondary">' + item.service.toUpperCase() + '</div>';
               var app_password = item.app_password ? ' <a href="/edit/app-passwd/' + item.app_password + '"><i class="bi bi-app-indicator"></i> ' + escapeHtml(item.app_password_name || "App") + '</a>' : '';
-              var real_rip = item.real_rip.startsWith("Web") ? item.real_rip : '<a href="https://bgp.he.net/ip/' + item.real_rip + '" target="_blank">' + item.real_rip + "</a>";
+              var real_rip = item.real_rip.startsWith("Web") ? item.real_rip : '<a href="https://bgp.tools/prefix/' + item.real_rip + '" target="_blank">' + item.real_rip + "</a>";
               var ip_location = item.location ? ' <span class="flag-icon flag-icon-' + item.location.toLowerCase() + '"></span>' : '';
               var ip_data = real_rip + ip_location + app_password;
 
